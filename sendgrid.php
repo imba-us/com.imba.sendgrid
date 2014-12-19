@@ -22,19 +22,85 @@ function sendgrid_add_url_to_xml($username = '', $password = '') {
 }
 
 /*
+ * hook_civicrm_alterMailParams
+ */
+function sendgrid_civicrm_alterMailParams(&$params, $context) {
+
+	if (($context == 'civimail') && ($params['job_id'])) {
+		
+		require_once('api/api.php');
+		
+		try {
+			$job = civicrm_api3('MailingJob', 'getsingle', array('id' => $params['job_id']));
+			$mailing = civicrm_api3('Mailing', 'getsingle', array('id' => $job['mailing_id']));
+			$settings = sendgrid_get_settings();
+			
+			$header = array(
+				'filters' => array(
+					'clicktrack' => array(
+						'settings' => array(
+							'enable' => ($settings['open_click_processor'] == 'SendGrid') && $mailing['url_tracking'] ? '1' : '0'
+						)
+					),
+					'opentrack' => array(
+						'settings' => array(
+							'enable' => ($settings['open_click_processor'] == 'SendGrid') && $mailing['open_tracking'] ? '1' : '0'
+						)
+					)
+				),
+				'unique_args' => array(
+					'job_id' => $params['job_id'],
+					'event_queue_id' => $params['event_queue_id'],
+					'hash' => $params['hash']
+				)
+			);
+			$params['X-SMTPAPI'] = trim(substr(preg_replace('/(.{1,70})(,|:|\})/', '$1$2' . "\n", 'X-SMTPAPI: ' . json_encode($header)), 11));
+		}
+		catch (CiviCRM_API3_Exception $e) {
+			require_once('CRM/Core/Error.php');
+			CRM_Core_Error::debug_log_message($e->getMessage() . print_r($params, true));
+		}
+	}
+}
+
+/*
  * hook_civicrm_buildForm
  *
  * add authentication fields to the outgoing email settings page
  * for use with the SendGrid Event Notification app
+ *
+ * play with tracking options
  */
 function sendgrid_civicrm_buildForm($formName, &$form) {
 	if ($formName == 'CRM_Admin_Form_Setting_Smtp') {
+
+		$settings = sendgrid_get_settings();
+	
 		$form->add('text', 'sendgrid_username', ts('Username'));
 		$form->add('password', 'sendgrid_password', ts('Password'));
-		$form->setDefaults(sendgrid_get_settings());
+		$el = $form->add('select', 'open_click_processor', ts('Open / Click Processing'));
+		$el->loadArray(array('Never' => 'Do No Track', 'CiviMail' => 'CiviMail', 'SendGrid' => 'SendGrid'));
+		$el = $form->add('checkbox', 'track_optional', 'Optional', 'When tracking, make it optional per mailing.');
+		$el->setChecked((bool)$settings['track_optional']);
+
+		$form->setDefaults($settings);
 		
 		$template = CRM_Core_Smarty::singleton();
 		$template->appendValue('nginx', sendgrid_get_nginx());
+	}
+	elseif (($formName = 'CRM_Mailing_Form_Settings') && ($form->elementExists('url_tracking'))) {
+	
+		$settings = sendgrid_get_settings();
+		$track = $settings['open_click_processor'] != 'Never';
+		$freeze = !$track || !$settings['track_optional'];
+
+		$el = $form->getElement('url_tracking');
+		if ($freeze)
+			$el->freeze();
+		$el = $form->getElement('open_tracking');
+		if ($freeze)
+			$el->freeze();
+		$form->setDefaults(array('url_tracking' => $track, 'open_tracking' => $track));
 	}
 }
 
@@ -43,6 +109,16 @@ function sendgrid_civicrm_buildForm($formName, &$form) {
  */
 function sendgrid_civicrm_install() {
 	sendgrid_add_url_to_xml();
+	
+	CRM_Core_DAO::executeQuery("CREATE TABLE `civicrm_mailing_event_spam_report` (
+									  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+									  `event_queue_id` int(10) unsigned NOT NULL COMMENT 'FK to EventQueue',
+									  `time_stamp` datetime NOT NULL COMMENT 'When this open event occurred.',
+									  PRIMARY KEY (`id`),
+									  KEY `FK_civicrm_mailing_event_opened_event_queue_id` (`event_queue_id`),
+									  CONSTRAINT `FK_civicrm_mailing_event_spam_report_event_queue_id` FOREIGN KEY (`event_queue_id`) REFERENCES `civicrm_mailing_event_queue` (`id`) ON DELETE CASCADE
+									) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;");
+	
   _sendgrid_civix_civicrm_install();
 }
 
@@ -58,20 +134,35 @@ function sendgrid_civicrm_postProcess($formName, &$form) {
 		
 		if (!isset($vars['sendgrid_username']))
 			return true;
+
+		if (!$vars['sendgrid_username'] || !$vars['sendgrid_password'])
+			$vars['sendgrid_username'] = $vars['sendgrid_password'] = '';
+		if (!isset($vars['track_optional']))
+			$vars['track_optional'] = '0';
 		
-		$username = $vars['sendgrid_username'];
-		$password = $vars['sendgrid_password'];
-		if (!$username || !$password)
-			$username = $password = '';
-			
-		sendgrid_save_settings(array(
-			'sendgrid_username' => $username,
-			'sendgrid_password' => $password
-		));
-		sendgrid_add_url_to_xml($username, $password);
-		sendgrid_htpasswd($username, $password);
+		$settings = sendgrid_get_settings();
+		foreach($vars as $k => $v) {
+			if (isset($settings[$k]))
+				$settings[$k] = $v;
+		}
+
+		sendgrid_save_settings($settings);
+		sendgrid_add_url_to_xml($vars['sendgrid_username'], $vars['sendgrid_password']);
+		sendgrid_htpasswd($vars['sendgrid_username'], $vars['sendgrid_password']);
 	}
 	return true;
+}
+
+/**
+ * Implementation of hook_civicrm_uninstall
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_uninstall
+ */
+function sendgrid_civicrm_uninstall() {
+
+	CRM_Core_DAO::executeQuery("DROP TABLE `civicrm_mailing_event_spam_report`");
+
+  _sendgrid_civix_civicrm_uninstall();
 }
 
 /*
@@ -99,11 +190,16 @@ function sendgrid_get_settings() {
 	if (empty($sendgrid_settings)) {
 		if (file_exists(SETTINGS))
 			$sendgrid_settings = parse_ini_file(SETTINGS);
-		else
+		else {
 			$sendgrid_settings = array(
 				'sendgrid_username' => '',
-				'sendgrid_password' => ''
+				'sendgrid_password' => '',
+				'open_click_processor' => 'CiviMail',
+				'track_optional' => '1',
+				'base_civi_dir' => dirname(shell_exec('find ' . $_SERVER['DOCUMENT_ROOT'] . ' -name "civicrm.config.php"'))
 			);
+			sendgrid_save_settings($sendgrid_settings);
+		}
 	}
 	return $sendgrid_settings;
 }
@@ -180,7 +276,8 @@ function sendgrid_htpasswd($username, $plainpasswd) {
 	}
 	else {
 		// if there is no username, delete the password file and reduce .htaccess to not produce indices
-		unlink(HTPASSWD);
+		if (file_exists(HTPASSWD))
+			unlink(HTPASSWD);
 		file_put_contents(HTACCESS, "Options -Indexes\n");
 		chmod(HTACCESS, 0644);
 	}
@@ -224,15 +321,6 @@ function sendgrid_civicrm_config(&$config) {
  */
 function sendgrid_civicrm_xmlMenu(&$files) {
   _sendgrid_civix_civicrm_xmlMenu($files);
-}
-
-/**
- * Implementation of hook_civicrm_uninstall
- *
- * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_uninstall
- */
-function sendgrid_civicrm_uninstall() {
-  _sendgrid_civix_civicrm_uninstall();
 }
 
 /**

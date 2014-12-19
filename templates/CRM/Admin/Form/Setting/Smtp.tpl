@@ -86,6 +86,16 @@
                 			<span class="description">{ts}If either of the username or password are omitted, then authentication will be disabled.{/ts}</span>
                 		</td>
                 	</tr>
+                	<tr>
+                		<td class="label">{$form.open_click_processor.label}</td>
+                		<td>{$form.open_click_processor.html}<br />
+	                		<span class="description">{ts}Select where open and click-throughs should be processed. Either way, the same data is collected, stored, and reported.{/ts}</span>
+	                	</td>
+                	</tr>
+                	<tr>
+                		<td></td>
+                		<td>{$form.track_optional.html}</td>
+                	</tr>
                 </table>
                 <div id="help">
                 	{ts}<p>
