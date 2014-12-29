@@ -100,9 +100,11 @@ class CRM_Mailing_BAO_TrackableURL extends CRM_Mailing_DAO_TrackableURL {
 		if (empty($sendgrid))
 			$sendgrid = sendgrid_get_settings();
 		if ($sendgrid['open_click_processor'] == 'CiviMail')
-			$returnUrl = "{$urlCache[$url]}&qid={$queue_id}";
-		else
+			$returnUrl = "{$urlCache[$url]}&qid={$queue_id}";	// this is the original line
+		else {
+			unset($urlCache[$url]);
 			$returnUrl = $url;
+		}
 		// com.imba.sendgrid
 
     if ($hrefExists) {

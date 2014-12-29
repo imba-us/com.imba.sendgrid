@@ -1,11 +1,9 @@
 <?xml version="1.0"?>
 <menu>
   <item>
-    <path>civicrm/sendgrid_doc</path>
-    <page_callback>CRM_Sendgrid_Page_Doc</page_callback>
+    <path>civicrm/sendgrid</path>
+    <page_callback>CRM_Sendgrid_Form_SendGrid</page_callback>
     <title>SendGrid Event Notification Processor</title>
-    <access_arguments>access CiviCRM</access_arguments>
-    <page_type>0</page_type>
-    <weight>1</weight>
+    <access_arguments>administer CiviCRM</access_arguments>
   </item>
 </menu>

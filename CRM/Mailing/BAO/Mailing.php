@@ -2835,7 +2835,7 @@ AND        m.id = %1
         )
       );
 
-      $contactMailings[$mailingId]['links'] = CRM_Core_Action::formLink($actionLinks);
+      $contactMailings[$mailingId]['links'] = CRM_Core_Action::formLink($actionLinks, NULL, array());
     }
 
     return $contactMailings;
