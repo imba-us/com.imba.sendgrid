@@ -96,7 +96,8 @@
 		<pre>{$url}</pre>
 		<p>{ts}While it is safe to select all actions to be reported by the SendGrid Event Notification app,
 		for better performance <em>Processed</em>, <em>ASM Group Unsubscribe</em>, and <em>ASM Group Resubscribe</em>
-		should be deselected. They are essentially meaningless and therefore ignored. <em>Deferred</em> is simply
+		should be deselected. They are essentially meaningless and therefore ignored. CiviCRM already counts as
+		delivered as soon as the mail is sent, so <em>Delivered</em> is also ignored. <em>Deferred</em> is simply
 		a temporary failure that will be reattempted; this extension does nothing more that record it to the main
 		CiviCRM log, so you may wish to deselect this action as well.{/ts}</p>
 	</div>
