@@ -14,35 +14,61 @@ $sendgrid_settings = array();
  */
 function sendgrid_civicrm_alterMailParams(&$params, $context) {
 
-	if (($context == 'civimail') && ($params['job_id'])) {
+	static $job_cache = array();
+	static $mailing_cache = array();
+
+	if ($context == 'civimail') {
+	
+		$config = CRM_Core_Config::singleton();
+		@list($ignore, $job_id, $event_queue_id, $hash) = explode($config->verpSeparator, substr($params['Return-Path'], 0, strpos($params['Return-Path'], '@')));
+		
+		if (!$job_id)
+			return;
 		
 		require_once('api/api.php');
 		
 		try {
-			$job = civicrm_api3('MailingJob', 'getsingle', array('id' => $params['job_id']));
-			$mailing = civicrm_api3('Mailing', 'getsingle', array('id' => $job['mailing_id']));
+			if (empty($job_cache[$job_id]))
+				$job_cache[$job_id] = civicrm_api3('MailingJob', 'getsingle', array('id' => $job_id));;
+			$job = $job_cache[$job_id];
+			
+			if (empty($mailing_cache[$job['mailing_id']]))
+				$mailing_cache[$job['mailing_id']] = civicrm_api3('Mailing', 'getsingle', array('id' => $job['mailing_id']));
+			$mailing = $mailing_cache[$job['mailing_id']];
+
 			$settings = sendgrid_get_settings();
 			
+			$clicktrack = ($settings['open_click_processor'] == 'SendGrid') && $mailing['url_tracking'] ? '1' : '0';
+			$opentrack = ($settings['open_click_processor'] == 'SendGrid') && $mailing['open_tracking'] ? '1' : '0';
+			
+			// prepare the SendGrid SMTP API header
 			$header = array(
 				'filters' => array(
 					'clicktrack' => array(
 						'settings' => array(
-							'enable' => ($settings['open_click_processor'] == 'SendGrid') && $mailing['url_tracking'] ? '1' : '0'
+							'enable' => $clicktrack
 						)
 					),
 					'opentrack' => array(
 						'settings' => array(
-							'enable' => ($settings['open_click_processor'] == 'SendGrid') && $mailing['open_tracking'] ? '1' : '0'
+							'enable' => $opentrack
 						)
 					)
 				),
 				'unique_args' => array(
-					'job_id' => $params['job_id'],
-					'event_queue_id' => $params['event_queue_id'],
-					'hash' => $params['hash']
+					'job_id' => $job_id,
+					'event_queue_id' => $event_queue_id,
+					'hash' => $hash
 				)
 			);
 			$params['X-SMTPAPI'] = trim(substr(preg_replace('/(.{1,70})(,|:|\})/', '$1$2' . "\n", 'X-SMTPAPI: ' . json_encode($header)), 11));
+			
+			if ($opentrack && !empty($params['html'])) {
+				// remove the CiviMail generated open tracking url
+				$url = "\n" . '<img src="' . $config->userFrameworkResourceURL .
+				  "extern/open.php?q=$event_queue_id\" width='1' height='1' alt='' border='0'>";
+				$params['html'] = substr($params['html'], 0, 0 - strlen($url));
+			}
 		}
 		catch (CiviCRM_API3_Exception $e) {
 			require_once('CRM/Core/Error.php');
@@ -50,6 +76,7 @@ function sendgrid_civicrm_alterMailParams(&$params, $context) {
 		}
 	}
 }
+
 
 /*
  * hook_civicrm_buildForm
@@ -140,20 +167,15 @@ function sendgrid_civicrm_uninstall() {
  */
 function sendgrid_get_settings() {
 	global $sendgrid_settings;
-	require_once 'CRM/Core/BAO/Setting.php';
 	
 	if (empty($sendgrid_settings)) {
+		require_once 'CRM/Core/BAO/Setting.php';
 		$sendgrid_settings = array(
 			'username' => CRM_Core_BAO_Setting::getItem('sendgrid', 'username', null, ''),
 			'password' => CRM_Core_BAO_Setting::getItem('sendgrid', 'password', null, ''),
 			'open_click_processor' => CRM_Core_BAO_Setting::getItem('sendgrid', 'open_click_processor', null, 'CiviMail'),
-			'track_optional' => CRM_Core_BAO_Setting::getItem('sendgrid', 'track_optional', null, '1'),
-			'base_civi_dir' => CRM_Core_BAO_Setting::getItem('sendgrid', 'base_civi_dir', null, '')
+			'track_optional' => CRM_Core_BAO_Setting::getItem('sendgrid', 'track_optional', null, '1')
 		);
-		if (!$sendgrid_settings['base_civi_dir']) {
-			$sendgrid_settings['base_civi_dir'] = dirname(shell_exec('find ' . $_SERVER['DOCUMENT_ROOT'] . ' -name "civicrm.config.php"'));
-			sendgrid_save_settings($sendgrid_settings);
-		}
 	}
 	return $sendgrid_settings;
 }

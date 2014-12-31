@@ -100,13 +100,13 @@ function sendgrid_spamreport($job_id, $event_queue_id, $hash, $event) {
 				case 'dropped':
 					// if dropped because of previous bounce, unsubscribe, or spam report, treat it as such...
 					// ...otherwise log it
-					if ($event->reason == 'bounced???') {
+					if ($event->reason == 'Bounced Address') {
 						sendgrid_bounce($job_id, $event_queue_id, $hash, $event->reason);
 					}
-					elseif ($event->reason == 'unsubscribed???') {
+					elseif ($event->reason == 'Unsubscribed Address') {
 						sendgrid_unsubscribe($job_id, $event_queue_id, $hash, $event->event);
 					}
-					elseif ($event->reason == 'spammed???') {
+					elseif ($event->reason == 'Spam Reporting Address') {
 						sendgrid_spamreport($job_id, $event_queue_id, $hash, $event->event);
 					}
 					else {

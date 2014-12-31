@@ -15,6 +15,10 @@
 		background-color: #F8EBEB;
 		border: 1px solid red;
 	}
+	.crm-container fieldset {
+		border-top: none;
+		padding: 0px;
+	}
 </style>
 {/literal}
 
@@ -30,7 +34,8 @@
 	{/if}
 	
 	<div class="info">
-		<fieldset><legend>{ts}SendGrid Event Notification Processor Configuration{/ts}</legend>
+		<h1>{ts}SendGrid Event Notification Processor Configuration{/ts}</h1>
+		<fieldset>
 			 <table class="form-layout">
 				<tr>
 					<td class="label">{$form.username.label}</td>
