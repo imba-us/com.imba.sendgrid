@@ -64,10 +64,9 @@ function sendgrid_civicrm_alterMailParams(&$params, $context) {
 			$params['X-SMTPAPI'] = trim(substr(preg_replace('/(.{1,70})(,|:|\})/', '$1$2' . "\n", 'X-SMTPAPI: ' . json_encode($header)), 11));
 			
 			if ($opentrack && !empty($params['html'])) {
-				// remove the CiviMail generated open tracking url
-				$url = "\n" . '<img src="' . $config->userFrameworkResourceURL .
-				  "extern/open.php?q=$event_queue_id\" width='1' height='1' alt='' border='0'>";
-				$params['html'] = substr($params['html'], 0, 0 - strlen($url));
+				// remove the CiviMail generated open tracking img
+				$img = '#<img src="' . $config->userFrameworkResourceURL . "extern/open\.php\?q=$event_queue_id\".*?>#";
+				$params['html'] = preg_replace($img, '', $params['html']);
 			}
 		}
 		catch (CiviCRM_API3_Exception $e) {
@@ -84,7 +83,7 @@ function sendgrid_civicrm_alterMailParams(&$params, $context) {
  * set tracking options for mailing
  */
 function sendgrid_civicrm_buildForm($formName, &$form) {
-	if (($formName = 'CRM_Mailing_Form_Settings') && ($form->elementExists('url_tracking'))) {
+	if (($formName == 'CRM_Mailing_Form_Settings') && ($form->elementExists('url_tracking'))) {
 	
 		$settings = sendgrid_get_settings();
 		$track = $settings['open_click_processor'] != 'Never';
@@ -97,6 +96,20 @@ function sendgrid_civicrm_buildForm($formName, &$form) {
 		if ($freeze)
 			$el->freeze();
 		$form->setDefaults(array('url_tracking' => $track, 'open_tracking' => $track));
+	}
+	elseif ($formName == 'CRM_Report_Form_Mailing_Detail') {
+		// this will check Spam Report in the report criteria,
+		// but it still doesn't cause that column to be displayed by default.
+		// I can't figure out how to make that happen.
+		
+		$grp = $form->getElement('fields');
+		$els = $grp->getElements();
+		foreach($els as $el) {
+			if ($el->getName() == 'spam_id') {
+				$el->setChecked(true);
+				break;
+			}
+		}
 	}
 }
 
