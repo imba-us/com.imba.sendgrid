@@ -12,13 +12,12 @@
     <url desc="Main Extension Page">/civicrm/sendgrid</url>
     <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
   </urls>
-  <releaseDate>2014-12-11</releaseDate>
+  <releaseDate>2015-01-23</releaseDate>
   <version>1.0</version>
-  <develStage>alpha</develStage>
+  <develStage>release</develStage>
   <compatibility>
     <ver>4.4</ver>
   </compatibility>
-  <comments>This is a new, undeveloped module</comments>
   <civix>
     <namespace>CRM/Sendgrid</namespace>
   </civix>
