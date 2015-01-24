@@ -7,4 +7,4 @@ The email events that SendGrid sends notifications of include: _Processed, Dropp
 
 The extension allows the site admin to select if they would like SendGrid or CiviCRM to process _Open_ and _Click-through_ events, and if tracking should be made optional per mailing. The extension adds a Mail Spam Report template and includes spam reports on the Mail Summary and the Detailed Report for the mailing. The extension also supports authentication with a username and password.
 
-To install add to your custom_extentions folder, enable, then go to Mailings > SendGrid Configuration to configure settings. The extension will display the HTTP Post URL to configure in your SendGrid Event Notifications App, as well as other server configuration instructions if needed.
+To install add to your CiviCRM Extentions folder, enable, then go to Mailings > SendGrid Configuration to configure settings. The extension will display the HTTP Post URL to configure in your SendGrid Event Notifications App, as well as other server configuration instructions if needed.
