@@ -1,5 +1,5 @@
 # com.imba.sendgrid
-<h3>SendGrid Event Notification app listener for CiviCRM
+<h3>SendGrid Event Notification app listener for CiviCRM</h3>
 
 SendGrid is a 3rd party bulk email delivery provider that features an Event Notification app (https://sendgrid.com/docs/API_Reference/Webhooks/event.html) which is included with their service. This functionality was chosen to integrate as a CiviCRM extension because it's easy to configure what notifications you want sent, features basic HTTP authentication, requires just a "responder" or "listener" (this extension) to receive the notifications from SendGrid and add them to the CiviCRM database, and could be developed to be relatively agnostic of a specific organization and distributed to the CiviCRM community.
 
