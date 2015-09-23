@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <extension key="com.imba.sendgrid" type="module">
+  <downloadUrl>https://github.com/fulltrucker/com.imba.sendgrid</downloadUrl>
   <file>sendgrid</file>
   <name>SendGrid Event Notfication Processor</name>
   <description>Process notifications sent from SendGrid for bounced emails, etc.</description>
@@ -10,14 +11,16 @@
   </maintainer>
   <urls>
     <url desc="Main Extension Page">/civicrm/sendgrid</url>
+    <url desc="Documentation">https://github.com/fulltrucker/com.imba.sendgrid</url>
     <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
   </urls>
-  <releaseDate>2015-01-23</releaseDate>
-  <version>1.0</version>
+  <releaseDate>2015-08-13</releaseDate>
+  <version>2.0</version>
   <develStage>stable</develStage>
   <compatibility>
-    <ver>4.4</ver>
+    <ver>4.6</ver>
   </compatibility>
+  <comments>This is a new, undeveloped module</comments>
   <civix>
     <namespace>CRM/Sendgrid</namespace>
   </civix>

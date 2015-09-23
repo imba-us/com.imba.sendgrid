@@ -214,6 +214,10 @@ function sendgrid_save_settings($settings) {
 	}
 }
 
+CRM_Core_Resources::singleton()
+	->addScriptFile('com.imba.sendgrid', 'js/sendgrid.js')
+	->addVars('sendgrid', sendgrid_get_settings());
+
 // *************************************
 // THE REST IS JUST STANDARD BOILERPLATE
 // *************************************
