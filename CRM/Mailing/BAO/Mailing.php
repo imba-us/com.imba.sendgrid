@@ -2459,17 +2459,25 @@ ORDER BY   civicrm_email.is_bulkmail DESC
 
     // get all the groups that this user can access
     // if they dont have universal access
-    $groups = CRM_Core_PseudoConstant::group(NULL, FALSE);
+    $groupNames = civicrm_api3('group', 'get', array(
+      'is_active' => 1,
+      'check_permissions' => TRUE,
+      'return' => array('title', 'id'),
+      'options' => array('limit' => 0),
+    ));
+    foreach ($groupNames['values'] as $group) {
+      $groups[$group['id']] = $group['title'];
+    }
     if (!empty($groups)) {
       $groupIDs = implode(',', array_keys($groups));
-
+      $domain_id = CRM_Core_Config::domainID();
       // get all the mailings that are in this subset of groups
       $query = "
 SELECT    DISTINCT( m.id ) as id
   FROM    civicrm_mailing m
 LEFT JOIN civicrm_mailing_group g ON g.mailing_id   = m.id
  WHERE ( ( g.entity_table like 'civicrm_group%' AND g.entity_id IN ( $groupIDs ) )
-    OR   ( g.entity_table IS NULL AND g.entity_id IS NULL ) )
+    OR   ( g.entity_table IS NULL AND g.entity_id IS NULL AND m.domain_id = $domain_id) )
 ";
       $dao = CRM_Core_DAO::executeQuery($query);
 
@@ -2942,9 +2950,9 @@ WHERE  civicrm_mailing_job.id = %1
 
     if ($mode == NULL && CRM_Core_BAO_MailSettings::defaultDomain() == "EXAMPLE.ORG") {
       throw new CRM_Core_Exception(ts('The <a href="%1">default mailbox</a> has not been configured. You will find <a href="%2">more info in the online user and administrator guide</a>', array(
-        1 => CRM_Utils_System::url('civicrm/admin/mailSettings', 'reset=1'),
-        2 => "http://book.civicrm.org/user/advanced-configuration/email-system-configuration/",
-      )));
+            1 => CRM_Utils_System::url('civicrm/admin/mailSettings', 'reset=1'),
+            2 => "http://book.civicrm.org/user/advanced-configuration/email-system-configuration/",
+          )));
     }
 
     // check if we are enforcing number of parallel cron jobs

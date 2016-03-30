@@ -36,12 +36,13 @@
         <td>{$report.event_totals.actionlinks.delivered}</td></tr>
   {if $report.mailing.open_tracking}
     <tr><td class="label"><a href="{$report.event_totals.links.opened}">{ts}Tracked Opens{/ts}</a></td>
-        <td>{$report.event_totals.opened}</td>
+   {* I wonder if this is the most efficient? Chris*}
+        <td>{$report.event_totals.opened} ({math equation="(x/y) * 100" x=$report.event_totals.opened y=$report.event_totals.queue format="%0.2f"}%)</td>
         <td>{$report.event_totals.actionlinks.opened}</td></tr>
   {/if}
   {if $report.mailing.url_tracking}
     <tr><td class="label"><a href="{$report.event_totals.links.clicks}">{ts}Click-throughs{/ts}</a></td>
-        <td>{$report.event_totals.url}</td>
+        <td>{$report.event_totals.url} ({math equation="(x/y) * 100" x=$report.event_totals.url y=$report.event_totals.queue format="%0.2f"}%)</td>
         <td>{$report.event_totals.actionlinks.clicks}</td></tr>
   {/if}
   <tr><td class="label"><a href="{$report.event_totals.links.forward}">{ts}Forwards{/ts}</a></td>

@@ -44,9 +44,7 @@ function sendgrid_spamreport($job_id, $event_queue_id, $hash, $event) {
 	// if we made it this far then we need to boostrap CiviCRM
 	session_start();
 
-	$dir = dirname(shell_exec('find ' . $_SERVER['DOCUMENT_ROOT'] . ' -name "civicrm.config.php"'));
-
-	require_once $dir . '/civicrm.config.php';
+	require_once $_SERVER['DOCUMENT_ROOT'] . '/sites/all/modules/civicrm/civicrm.config.php';
 	require_once 'CRM/Core/Config.php';
 	require_once 'api/api.php';
 
