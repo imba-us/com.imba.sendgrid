@@ -1,8 +1,8 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.6                                                |
+ | CiviCRM version 4.7                                                |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2015                                |
+ | Copyright CiviCRM LLC (c) 2004-2016                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -35,14 +35,16 @@
         <td>{$report.event_totals.delivered} ({$report.event_totals.delivered_rate|string_format:"%0.2f"}%)</td>
         <td>{$report.event_totals.actionlinks.delivered}</td></tr>
   {if $report.mailing.open_tracking}
-    <tr><td class="label"><a href="{$report.event_totals.links.opened}">{ts}Tracked Opens{/ts}</a></td>
-   {* I wonder if this is the most efficient? Chris*}
-        <td>{$report.event_totals.opened} ({math equation="(x/y) * 100" x=$report.event_totals.opened y=$report.event_totals.queue format="%0.2f"}%)</td>
+    <tr><td class="label"><a href="{$report.event_totals.links.opened}&distinct=1">{ts}Unique Opens{/ts}</a></td>
+        <td>{$report.event_totals.opened}</td>
+        <td>{$report.event_totals.actionlinks.opened}</td></tr>
+    <tr><td class="label"><a href="{$report.event_totals.links.opened}">{ts}Total Opens{/ts}</a></td>
+        <td>{$report.event_totals.total_opened}</td>
         <td>{$report.event_totals.actionlinks.opened}</td></tr>
   {/if}
   {if $report.mailing.url_tracking}
     <tr><td class="label"><a href="{$report.event_totals.links.clicks}">{ts}Click-throughs{/ts}</a></td>
-        <td>{$report.event_totals.url} ({math equation="(x/y) * 100" x=$report.event_totals.url y=$report.event_totals.queue format="%0.2f"}%)</td>
+        <td>{$report.event_totals.url}</td>
         <td>{$report.event_totals.actionlinks.clicks}</td></tr>
   {/if}
   <tr><td class="label"><a href="{$report.event_totals.links.forward}">{ts}Forwards{/ts}</a></td>
@@ -149,13 +151,15 @@
 <th><a href="{$report.event_totals.links.clicks}">{ts}Clicks{/ts}</a></th>
 <th><a href="{$report.event_totals.links.clicks_unique}">{ts}Unique Clicks{/ts}</a></th>
 <th>{ts}Success Rate{/ts}</th>
-<th>{ts}URL{/ts}</th></tr>
+<th>{ts}URL{/ts}</th>
+<th>{ts}Report{/ts}</th></tr>
 {foreach from=$report.click_through item=row}
 <tr class="{cycle values="odd-row,even-row"}">
 <td>{if $row.clicks > 0}<a href="{$row.link}">{$row.clicks}</a>{else}{$row.clicks}{/if}</td>
 <td>{if $row.unique > 0}<a href="{$row.link_unique}">{$row.unique}</a>{else}{$row.unique}{/if}</td>
 <td>{$row.rate|string_format:"%0.2f"}%</td>
 <td><a href="{$row.url}">{$row.url}</a></td>
+<td><a href="{$row.report}">Report</a></td>
 </tr>
 {/foreach}
 </table>

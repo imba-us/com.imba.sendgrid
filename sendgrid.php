@@ -181,13 +181,14 @@ function sendgrid_civicrm_uninstall() {
 function sendgrid_get_settings() {
 	global $sendgrid_settings;
 	
+	$civi = Civi::settings();
+
 	if (empty($sendgrid_settings)) {
-		require_once 'CRM/Core/BAO/Setting.php';
 		$sendgrid_settings = array(
-			'username' => CRM_Core_BAO_Setting::getItem('sendgrid', 'username', null, ''),
-			'password' => CRM_Core_BAO_Setting::getItem('sendgrid', 'password', null, ''),
-			'open_click_processor' => CRM_Core_BAO_Setting::getItem('sendgrid', 'open_click_processor', null, 'CiviMail'),
-			'track_optional' => CRM_Core_BAO_Setting::getItem('sendgrid', 'track_optional', null, '1')
+			'username' => $civi->get('sendgrid_username'),
+			'password' => $civi->get('sendgrid_password'),
+			'open_click_processor' => $civi->get('sendgrid_open_click_processor'),
+			'track_optional' => $civi->get('sendgrid_track_optional'),
 		);
 	}
 	return $sendgrid_settings;
@@ -200,12 +201,13 @@ function sendgrid_get_settings() {
  */
 function sendgrid_save_settings($settings) {
 	global $sendgrid_settings;
-	require_once 'CRM/Core/BAO/Setting.php';
+
+	$civi = Civi::settings();
 	
 	foreach($settings as $k => $v) {
 		$sendgrid_settings[$k] = $v;
 		try {
-			CRM_Core_BAO_Setting::setItem($v, 'sendgrid', $k);
+			$civi->set("sendgrid_$k", $v);
 		}
 		catch (Exception $e) {
 			require_once 'CRM/Core/Error.php';
