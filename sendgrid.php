@@ -177,12 +177,23 @@ function sendgrid_get_settings() {
 	global $sendgrid_settings;
 
 	if (empty($sendgrid_settings)) {
-		require_once 'CRM/Core/BAO/Setting.php';
 		$sendgrid_settings = array(
-			'secretcode' => CRM_Core_BAO_Setting::getItem('sendgrid', 'secretcode', null, ''),
-			'open_click_processor' => CRM_Core_BAO_Setting::getItem('sendgrid', 'open_click_processor', null, 'CiviMail'),
-			'track_optional' => CRM_Core_BAO_Setting::getItem('sendgrid', 'track_optional', null, '1')
+			'secretcode' => NULL,
+			'open_click_processor' => NULL,
+			'track_optional' => NULL,
 		);
+		foreach ($sendgrid_settings as $setting => $val) {
+			try {
+				$sendgrid_settings[$setting] = civicrm_api3('Setting', 'getvalue', array(
+					'name' => "sendgrid_$setting",
+					'group' => 'Sendgrid Preferences',
+				));
+			}
+			catch (CiviCRM_API3_Exception $e) {
+				$error = $e->getMessage();
+				CRM_Core_Error::debug_log_message(t('API Error: %1', array(1 => $error, 'domain' => 'com.imba.sendgrid')));
+			}
+		}
 	}
 	return $sendgrid_settings;
 }
@@ -195,16 +206,18 @@ function sendgrid_get_settings() {
 function sendgrid_save_settings($settings) {
 	global $sendgrid_settings;
 	require_once 'CRM/Core/BAO/Setting.php';
+	$settingsToSave = array();
 
 	foreach($settings as $k => $v) {
 		$sendgrid_settings[$k] = $v;
-		try {
-			CRM_Core_BAO_Setting::setItem($v, 'sendgrid', $k);
-		}
-		catch (Exception $e) {
-			require_once 'CRM/Core/Error.php';
-			CRM_Core_Error::debug_log_message($e->getMessage());
-		}
+		$settingsToSave["sendgrid_$k"] = $v;
+	}
+	try {
+		$settingsSaved = civicrm_api3('Setting', 'create', $settingsToSave);
+	}
+	catch (CiviCRM_API3_Exception $e) {
+		$error = $e->getMessage();
+		CRM_Core_Error::debug_log_message(t('API Error: %1', array(1 => $error, 'domain' => 'com.imba.sendgrid')));
 	}
 }
 
