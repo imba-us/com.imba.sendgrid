@@ -14,7 +14,7 @@ class CRM_Sendgrid_Page_Webhook extends CRM_Core_Page {
     }
     catch (CiviCRM_API3_Exception $e) {
       $error = $e->getMessage();
-      CRM_Core_Error::debug_log_message(t('API Error: %1', array(1 => $error, 'domain' => 'com.imba.sendgrid')));
+      CRM_Core_Error::debug_log_message(ts('API Error: %1', array(1 => $error, 'domain' => 'com.imba.sendgrid')));
     }
 
     if (!$events || !is_array($events)
