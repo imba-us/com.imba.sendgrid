@@ -57,7 +57,7 @@ class CRM_Sendgrid_Form_SendGrid extends CRM_Core_Form {
 
     parent::postProcess();
 
-    CRM_Core_Session::singleton()->pushUserContext('sendgrid');
+    CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/sendgrid', 'reset=1'));
   }
 
 }
