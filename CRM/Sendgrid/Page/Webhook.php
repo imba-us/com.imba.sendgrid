@@ -6,9 +6,22 @@ class CRM_Sendgrid_Page_Webhook extends CRM_Core_Page {
   public function run() {
     $events = json_decode(file_get_contents('php://input'));
 
-    if (!$events || !is_array($events)) {
+    try {
+      $secretCode = civicrm_api3('Setting', 'getvalue', array(
+        'name' => 'sendgrid_secretcode',
+        'group' => 'Sendgrid Preferences',
+      ));
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      $error = $e->getMessage();
+      CRM_Core_Error::debug_log_message(t('API Error: %1', array(1 => $error, 'domain' => 'com.imba.sendgrid')));
+    }
+
+    if (!$events || !is_array($events)
+      || (!empty($secretCode) && $secretCode != CRM_Utils_Array::value('secretcode', $_REQUEST))) {
       // SendGrid sends a json encoded array of events
       // if that's not what we get, we're done here
+      // or if the secret code doesn't match
       header("HTTP/1.0 404 Not Found");
       CRM_Utils_System::civiExit();
     }

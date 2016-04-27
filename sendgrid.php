@@ -2,11 +2,6 @@
 
 require_once 'sendgrid.civix.php';
 
-// misc filename constants
-define('HTACCESS', __DIR__ . '/.htaccess');
-define('HTPASSWD', __DIR__ . '/.htpasswd');
-define('EXT_DIR', __DIR__);
-
 $sendgrid_settings = array();
 
 /*
@@ -18,29 +13,29 @@ function sendgrid_civicrm_alterMailParams(&$params, $context) {
 	static $mailing_cache = array();
 
 	if ($context == 'civimail') {
-	
+
 		$config = CRM_Core_Config::singleton();
 		@list($ignore, $job_id, $event_queue_id, $hash) = explode($config->verpSeparator, substr($params['Return-Path'], 0, strpos($params['Return-Path'], '@')));
-		
+
 		if (!$job_id)
 			return;
-		
+
 		require_once('api/api.php');
-		
+
 		try {
 			if (empty($job_cache[$job_id]))
 				$job_cache[$job_id] = civicrm_api3('MailingJob', 'getsingle', array('id' => $job_id));;
 			$job = $job_cache[$job_id];
-			
+
 			if (empty($mailing_cache[$job['mailing_id']]))
 				$mailing_cache[$job['mailing_id']] = civicrm_api3('Mailing', 'getsingle', array('id' => $job['mailing_id']));
 			$mailing = $mailing_cache[$job['mailing_id']];
 
 			$settings = sendgrid_get_settings();
-			
+
 			$clicktrack = ($settings['open_click_processor'] == 'SendGrid') && $mailing['url_tracking'] ? '1' : '0';
 			$opentrack = ($settings['open_click_processor'] == 'SendGrid') && $mailing['open_tracking'] ? '1' : '0';
-			
+
 			// prepare the SendGrid SMTP API header
 			$header = array(
 				'filters' => array(
@@ -62,7 +57,7 @@ function sendgrid_civicrm_alterMailParams(&$params, $context) {
 				)
 			);
 			$params['X-SMTPAPI'] = trim(substr(preg_replace('/(.{1,70})(,|:|\})/', '$1$2' . "\n", 'X-SMTPAPI: ' . json_encode($header)), 11));
-			
+
 			if ($opentrack && !empty($params['html'])) {
 				// remove the CiviMail generated open tracking img
 				$img = '#<img src="' . $config->userFrameworkResourceURL . "extern/open\.php\?q=$event_queue_id\".*?>#";
@@ -84,7 +79,7 @@ function sendgrid_civicrm_alterMailParams(&$params, $context) {
  */
 function sendgrid_civicrm_buildForm($formName, &$form) {
 	if (($formName == 'CRM_Mailing_Form_Settings') && ($form->elementExists('url_tracking'))) {
-	
+
 		$settings = sendgrid_get_settings();
 		$track = $settings['open_click_processor'] != 'Never';
 		$freeze = !$track || !$settings['track_optional'];
@@ -101,7 +96,7 @@ function sendgrid_civicrm_buildForm($formName, &$form) {
 		// this will check Spam Report in the report criteria,
 		// but it still doesn't cause that column to be displayed by default.
 		// I can't figure out how to make that happen.
-		
+
 		$grp = $form->getElement('fields');
 		$els = $grp->getElements();
 		foreach($els as $el) {
@@ -141,7 +136,7 @@ function sendgrid_civicrm_navigationMenu(&$params) {
 	CRM_Core_BAO_Navigation::retrieve($menu_item_search, $menu_items);
 	if (!empty($menu_items))
 		return;
-		
+
 	$navID = CRM_Core_DAO::singleValueQuery("SELECT max(id) FROM civicrm_navigation");
 	if (is_integer($navID))
 		$navID++;
@@ -180,12 +175,11 @@ function sendgrid_civicrm_uninstall() {
  */
 function sendgrid_get_settings() {
 	global $sendgrid_settings;
-	
+
 	if (empty($sendgrid_settings)) {
 		require_once 'CRM/Core/BAO/Setting.php';
 		$sendgrid_settings = array(
-			'username' => CRM_Core_BAO_Setting::getItem('sendgrid', 'username', null, ''),
-			'password' => CRM_Core_BAO_Setting::getItem('sendgrid', 'password', null, ''),
+			'secretcode' => CRM_Core_BAO_Setting::getItem('sendgrid', 'secretcode', null, ''),
 			'open_click_processor' => CRM_Core_BAO_Setting::getItem('sendgrid', 'open_click_processor', null, 'CiviMail'),
 			'track_optional' => CRM_Core_BAO_Setting::getItem('sendgrid', 'track_optional', null, '1')
 		);
@@ -201,7 +195,7 @@ function sendgrid_get_settings() {
 function sendgrid_save_settings($settings) {
 	global $sendgrid_settings;
 	require_once 'CRM/Core/BAO/Setting.php';
-	
+
 	foreach($settings as $k => $v) {
 		$sendgrid_settings[$k] = $v;
 		try {
