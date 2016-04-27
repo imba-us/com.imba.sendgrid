@@ -38,7 +38,7 @@ class CRM_Sendgrid_Page_Webhook extends CRM_Core_Page {
 
           case 'deferred':
             // temp failure, just write it to the log
-            CRM_Core_Error::debug_log_message("Sendgrid webhook (deferred)\n" . print_r($event, true));
+            CRM_Core_Error::debug_log_message("Sendgrid webhook (deferred)\n" . print_r($event, TRUE));
             break;
 
           case 'bounce':
@@ -80,24 +80,28 @@ class CRM_Sendgrid_Page_Webhook extends CRM_Core_Page {
             if (!empty($info['query'])) {
               $qs = array();
               $pairs = explode('&', $info['query']);
-              foreach($pairs as $pair) {
-                if (strpos($pair, 'utm_') !== 0)
+              foreach ($pairs as $pair) {
+                if (strpos($pair, 'utm_') !== 0) {
                   $qs[] = $pair;
+                }
               }
               $info['query'] = implode('&', $qs);
 
-              $event->url = $info['scheme'] . '://' .
-                (!empty($info['user']) ? $info['user'] . ':' . $info['pass'] . '@' : '') .
-                $info['host'] .
-                (!empty($info['path']) ? $info['path'] : '') .
-                (!empty($info['query']) ? '?' . $info['query'] : '') .
-                (!empty($info['fragment']) ? '#' . $info['fragment'] : '');
+              $event->url = $info['scheme'] . '://';
+              if (!empty($info['user']) && !empty($info['pass'])) {
+                $event->url .= $info['user'] . ':' . $info['pass'] . '@';
+              }
+              $event->url .= $info['host'];
+              $event->url .= CRM_Utils_Array::value('path', $info, '');
+              $event->url .= empty($info['query']) ? '' : '?' . $info['query'];
+              $event->url .= empty($info['fragment']) ? '' : '#' . $info['fragment'];
             }
             try {
               $url = CRM_Core_DAO::escapeString($event->url);
               $mailing_id = CRM_Core_DAO::singleValueQuery("SELECT mailing_id FROM civicrm_mailing_job WHERE id='$job_id'");
-              if ($url_id = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_mailing_trackable_url WHERE mailing_id='$mailing_id' AND url='$url'"))
+              if ($url_id = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_mailing_trackable_url WHERE mailing_id='$mailing_id' AND url='$url'")) {
                 CRM_Mailing_Event_BAO_TrackableURLOpen::track($event_queue_id, $url_id);
+              }
             }
             catch (Exception $e) {
               CRM_Core_Error::debug_log_message("SendGrid webhook (click)\n" . $e->getMessage());
