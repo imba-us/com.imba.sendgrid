@@ -111,7 +111,7 @@ class CRM_Sendgrid_Page_Webhook extends CRM_Core_Page {
       }
     }
 
-    parent::run();
+    CRM_Utils_System::civiExit();
   }
 
   public static function bounce($job_id, $event_queue_id, $hash, $reason) {
