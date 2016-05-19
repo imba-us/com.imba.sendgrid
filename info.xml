@@ -15,6 +15,7 @@
   </urls>
   <releaseDate>2016-04-06</releaseDate>
   <version>3.0-beta1</version>
+  <develStage>beta</develStage>
   <compatibility>
     <ver>4.7</ver>
   </compatibility>
