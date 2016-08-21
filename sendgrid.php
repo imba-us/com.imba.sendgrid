@@ -9,6 +9,45 @@ define('EXT_DIR', __DIR__);
 
 $sendgrid_settings = array();
 
+/**
+ * Implements hook_civicrm_tokens().
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_tokens
+ */
+function sendgrid_civicrm_tokens(&$tokens) {
+
+  // for each group of tokens, add an array to $tokens keyed by the group name
+  // the Civi UI will uppercase first letters in the group name
+
+  $tokens['sendgrid'] = array(
+    // token => label
+    'sendgrid.click_track' => 'Click Track',
+  );
+}
+
+/**
+ * Implements hook_civicrm_tokenValues().
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_tokenValues
+ */
+function sendgrid_civicrm_tokenValues(&$values, $cids, $job = null, $tokens = array(), $context = null) {
+
+  // the hook_civicrm_tokenValues documentation doesn't indicate this possibility,
+  // but searching through the code clearly shows that it can be called this way
+  if ($is_single = !is_array($cids)) {
+    $values = array($cids => $values);
+    $cids = array($cids);
+  }
+  if (!empty($tokens['sendgrid'])) {
+  	foreach($cids as $cid) {
+  		$values[$cid]['sendgrid.click_track'] = '&sgct=1';
+  	}
+  }
+  // if this was called as a single contact, put the values array back in the correct format
+  if ($is_single)
+    $values = $values[$cids[0]];
+}
+
 /*
  * hook_civicrm_alterMailParams
  */

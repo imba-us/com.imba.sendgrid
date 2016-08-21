@@ -119,29 +119,39 @@ function sendgrid_spamreport($job_id, $event_queue_id, $hash, $event) {
 					break;
 
 				case 'click':
-					// first off, strip off any utm_??? query parameters for google analytics
-					$info = parse_url($event->url);
-					if (!empty($info['query'])) {
-						$qs = array();
-						$pairs = explode('&', $info['query']);
+					$track = FALSE;
+					@list($url, $back) = explode('?', $event->url);
+					if ($back) {
+						@list($qs, $fragment) = explode('#', $back);
+						$query = array();
+						$pairs = explode('&', $qs);
 						foreach($pairs as $pair) {
-							if (strpos($pair, 'utm_') !== 0)
-								$qs[] = $pair;
+							@list($key, $val) = explode('=', $pair);
+							// strip off any utm_??? query parameters for google analytics
+							if (strpos($key, 'utm_') === 0) {
+								continue;
+							}
+							$query[$key] = $pair;
 						}
-						$info['query'] = implode('&', $qs);
-						
-						$event->url = $info['scheme'] . '://' .
-							(!empty($info['user']) ? $info['user'] . ':' . $info['pass'] . '@' : '') .
-							$info['host'] . 
-							(!empty($info['path']) ? $info['path'] : '') .
-							(!empty($info['query']) ? '?' . $info['query'] : '') .
-							(!empty($info['fragment']) ? '#' . $info['fragment'] : '');
+						if ($track = !empty($query['sgct'])) {
+							unset($query['cs'], $query['cid'], $query['sgct']);
+						}
+						$url .= (!empty($query) ? ('?' . implode('&', array_values($query))) : '') . ($fragment ? "#$fragment" : '');
 					}
+					echo $url;
 					try {
-						$url = CRM_Core_DAO::escapeString($event->url);
+						$url = CRM_Core_DAO::escapeString($url);
 						$mailing_id = CRM_Core_DAO::singleValueQuery("SELECT mailing_id FROM civicrm_mailing_job WHERE id='$job_id'");
-						if ($url_id = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_mailing_trackable_url WHERE mailing_id='$mailing_id' AND url='$url'"))
+						$url_id = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_mailing_trackable_url WHERE mailing_id='$mailing_id' AND url='$url'");
+
+						if (!$url_id && $track) {
+							CRM_Core_DAO::executeQuery("INSERT INTO civicrm_mailing_trackable_url (url,mailing_id) VALUES ('$url',$mailing_id)");
+							$url_id = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_mailing_trackable_url WHERE mailing_id='$mailing_id' AND url='$url'");
+						}
+
+						if ($url_id) {
 							CRM_Mailing_Event_BAO_TrackableURLOpen::track($event_queue_id, $url_id);
+						}
 					}
 					catch (Exception $e) {
 						CRM_Core_Error::debug_log_message("SendGrid webhook (click)\n" . $e->getMessage());
