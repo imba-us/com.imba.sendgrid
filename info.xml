@@ -14,11 +14,11 @@
     <url desc="Documentation">https://github.com/fulltrucker/com.imba.sendgrid</url>
     <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
   </urls>
-  <releaseDate>2015-08-13</releaseDate>
-  <version>2.0</version>
-  <develStage>stable</develStage>
+  <releaseDate>2018-11-13</releaseDate>
+  <version>3.2</version>
+  <develStage>beta</develStage>
   <compatibility>
-    <ver>4.6</ver>
+    <ver>5.6</ver>
   </compatibility>
   <comments>This is a new, undeveloped module</comments>
   <civix>

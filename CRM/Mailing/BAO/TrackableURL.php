@@ -1,9 +1,9 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.6                                                |
+ | CiviCRM version 5                                                  |
  +--------------------------------------------------------------------+
- | Copyright CiviCRM LLC (c) 2004-2015                                |
+ | Copyright CiviCRM LLC (c) 2004-2018                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -28,9 +28,7 @@
 /**
  *
  * @package CRM
- * @copyright CiviCRM LLC (c) 2004-2015
- * $Id$
- *
+ * @copyright CiviCRM LLC (c) 2004-2018
  */
 class CRM_Mailing_BAO_TrackableURL extends CRM_Mailing_DAO_TrackableURL {
 
@@ -59,8 +57,8 @@ class CRM_Mailing_BAO_TrackableURL extends CRM_Mailing_DAO_TrackableURL {
 
     static $urlCache = array();
 
-    if (array_key_exists($url, $urlCache)) {
-      return $urlCache[$url] . "&qid=$queue_id";
+    if (array_key_exists($mailing_id . $url, $urlCache)) {
+      return $urlCache[$mailing_id . $url] . "&qid=$queue_id";
     }
 
     // hack for basic CRM-1014 and CRM-1151 and CRM-3492 compliance:
@@ -85,9 +83,7 @@ class CRM_Mailing_BAO_TrackableURL extends CRM_Mailing_DAO_TrackableURL {
 
       $tracker->url = $url;
       $tracker->mailing_id = $mailing_id;
-      if (strlen($tracker->url) > 254) {
-        return $url;
-      }
+
       if (!$tracker->find(TRUE)) {
         $tracker->save();
       }
@@ -95,7 +91,7 @@ class CRM_Mailing_BAO_TrackableURL extends CRM_Mailing_DAO_TrackableURL {
       $tracker->free();
 
       $redirect = $config->userFrameworkResourceURL . "extern/url.php?u=$id";
-      $urlCache[$url] = $redirect;
+      $urlCache[$mailing_id . $url] = $redirect;
     }
 
 		// com.imba.sendgrid
@@ -111,7 +107,7 @@ class CRM_Mailing_BAO_TrackableURL extends CRM_Mailing_DAO_TrackableURL {
 		// com.imba.sendgrid
 
     if ($hrefExists) {
-      $returnUrl = "href='{$returnUrl}'";
+      $returnUrl = "href='{$returnUrl}' rel='nofollow'";
     }
 
     return $returnUrl;
@@ -133,35 +129,6 @@ class CRM_Mailing_BAO_TrackableURL extends CRM_Mailing_DAO_TrackableURL {
     }
 
     return NULL;
-  }
-
-  /**
-   * @param $msg
-   * @param int $mailing_id
-   * @param int $queue_id
-   * @param bool $onlyHrefs
-   */
-  public static function scan_and_replace(&$msg, $mailing_id, $queue_id, $onlyHrefs = FALSE) {
-    if (!$mailing_id) {
-      return;
-    }
-
-    $protos = '(https?|ftp)';
-    $letters = '\w';
-    $gunk = '/#~:.?+=&%@!\-';
-    $punc = '.:?\-';
-    $any = "{$letters}{$gunk}{$punc}";
-    if ($onlyHrefs) {
-      $pattern = "{\\b(href=([\"'])?($protos:[$any]+?(?=[$punc]*[^$any]|$))([\"'])?)}im";
-    }
-    else {
-      $pattern = "{\\b($protos:[$any]+?(?=[$punc]*[^$any]|$))}eim";
-    }
-
-    $trackURL = CRM_Mailing_BAO_TrackableURL::getTrackerURL('\\1', $mailing_id, $queue_id);
-    $replacement = $onlyHrefs ? ("href=\"{$trackURL}\"") : ("\"{$trackURL}\"");
-
-    $msg = preg_replace($pattern, $replacement, $msg);
   }
 
 }
